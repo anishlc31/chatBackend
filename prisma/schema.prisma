@@ -21,6 +21,8 @@ model  User{
   password      String
   Username String 
  email String
+  verificationToken String?  // Nullable field for the token
+  isVerified        Boolean  @default(false)
  
 
 }
