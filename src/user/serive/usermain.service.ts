@@ -4,63 +4,62 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaClientValidationError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 import { loginDto } from '../dto/login.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { EmailService } from './email.service';
 const jwt = require('jsonwebtoken');
+import { promisify } from 'util';
 
 const prisma = new PrismaClient();
 
-
+  
 @Injectable()
 export class UsermainService {
+  constructor(private emailService: EmailService) {}
 
+  async signup(dto: singupDto) {
+    const { email, password, Username } = dto;
+  const existingUser = await prisma.user.findFirst({
+      where: { email },
+    });
 
-    async signup( dto: singupDto) {
+    if (existingUser) {
+      throw new ForbiddenException('Email is already in use');
+    }
+
+    const hash = await argon.hash(password);
+
+try{
+  const user = await prisma.user.create({
+    data: {
+      email,
+      Username,
+      password: hash,
       
-     const { email , password , Username} = dto
-      
-        const existingUser = await prisma.user.findFirst({
-            where: {
-              email: email,
-            },
-          });
-      
-    
-        if (existingUser) {
-          throw new ForbiddenException('Email is already in use');
+  }
+ }
+);
+ const token = this.signToken(user.id, dto.email);
+  return {
+access_token: token,
+    id: user.id,
+  };
+
+} catch (error) {
+      console.log(error); 
+
+      if (error instanceof PrismaClientValidationError) {
+        if (error) {
+          throw new ForbiddenException('Invalide token ');
         }
-        const hash = await argon.hash(password);
-        try {
-          const user = await prisma.user.create({
-            data: {
-                email  :email ,
-                Username : Username,
-                password : hash
-                
-              },
-           
-            },
-          
-          );
-      const token = this.signToken(user.id, dto.email);
-          return {
-       access_token: token,
-            id: user.id,
-          };
-        } catch (error) {
-          console.log(error); 
-    
-          if (error instanceof PrismaClientValidationError) {
-            if (error) {
-              throw new ForbiddenException('Invalide token ');
-            }
-            throw error;
-          }
-        }
+        throw error;
       }
-    
+    }
 
 
+  }
 
-  signToken(userId: string, email: any): Promise<string> {
+
+   signToken(userId: string, email: any): Promise<string> {
     const payload = {
       sub: userId,
       email,
@@ -71,34 +70,29 @@ export class UsermainService {
   }
 
 
-
   async login(dto: loginDto) {
     if (!dto.email || !dto.password) {
-      return ('Please provide email and password');
+      return 'Please provide email and password';
     }
-  
+
     const user = await prisma.user.findFirst({
-      where: {
-        email:dto.email
-      },
+      where: { email: dto.email },
     });
-  
-     if (!user) {
-      return 'invaild credentials'
+
+    if (!user) {
+      return 'Invalid credentials';
     }
-  
+
     const pwMatches = await argon.verify(user.password, dto.password);
-  
+
     if (!pwMatches) {
-      return 'invaild credentials'
+      return 'Invalid credentials';
     }
-  
-    const token = this.signToken(user.id, dto.email);
+
+    const token = await this.signToken(user.id, dto.email);
     return {
       access_token: token,
       id: user.id,
     };
   }
-  
-
 }

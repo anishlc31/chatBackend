@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength, Validate } from "class-validator";
 
-export class singupDto {
+export class loginDto {
     @IsEmail({}, { each: true })
     @IsNotEmpty()
     email: string;
@@ -8,11 +8,6 @@ export class singupDto {
       @IsString()
       @IsNotEmpty()
       password : string;
-  
-  
-  @IsString()
-    @MaxLength(50)
-    @MinLength(4)
-    Username: string;
+
   
 }
