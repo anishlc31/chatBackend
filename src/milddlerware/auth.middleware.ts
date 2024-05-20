@@ -2,31 +2,35 @@ import { HttpException, HttpStatus, Injectable, NestMiddleware } from '@nestjs/c
 import { Request, Response, NextFunction } from 'express';
 import { UsermainService } from 'src/user/serive/usermain.service';
 
-
-
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
 
-  constructor( private userService: UsermainService) { }
+  constructor(private userService: UsermainService) {}
 
-  async use(req: RequestModel, res: Response, next: NextFunction) {
+  async use(req: any, res: any, next: NextFunction) {
     try {
-      const tokenArray: string[] = req.headers['authorization'].split(' ');
-      const decodedToken = await this.userService.verifyJwt(tokenArray[1]);
+      const authorizationHeader = req.headers['authorization'];
+      if (!authorizationHeader) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
 
-      // make sure that the user is not deleted, or that props or rights changed compared to the time when the jwt was issued
-      const user: UserI = await this.userService.getOne(decodedToken.user.id);
+      const tokenArray = authorizationHeader.split(' ');
+      if (tokenArray.length !== 2 || tokenArray[0] !== 'Bearer') {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const token = tokenArray[1];
+      const decodedToken = await this.userService.verifyJwt(token);
+
+      const user = await this.userService.getOne(decodedToken.sub);
       if (user) {
-        // add the user to our req object, so that we can access it later when we need it
-        // if it would be here, we would like overwrite
         req.user = user;
         next();
       } else {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
       }
-    } catch {
+    } catch (error) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
   }
-
 }
