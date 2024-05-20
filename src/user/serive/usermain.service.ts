@@ -4,17 +4,19 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaClientValidationError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
 import { loginDto } from '../dto/login.dto';
-import { v4 as uuidv4 } from 'uuid';
-import { EmailService } from './email.service';
 const jwt = require('jsonwebtoken');
+import { PrismaService } from 'prisma/prisma.service'
+import { v4 as uuidv4 } from 'uuid';
 import { promisify } from 'util';
+import { JwtService } from '@nestjs/jwt';
 
 const prisma = new PrismaClient();
 
   
 @Injectable()
 export class UsermainService {
-  constructor(private emailService: EmailService) {}
+
+  constructor(private readonly jwtService: JwtService) {}
 
   async signup(dto: singupDto) {
     const { email, password, Username } = dto;
@@ -94,5 +96,30 @@ access_token: token,
       access_token: token,
       id: user.id,
     };
+  }
+
+  async getAllUsers() {
+    try {
+      const users = await prisma.user.findMany();
+      return users;
+    } catch (error) {
+      console.log(error);
+      throw new ForbiddenException('Could not retrieve users');
+    }
+  }
+
+  async verifyJwt(token: string): Promise<any> {
+    try {
+      return this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+    } catch (error) {
+      throw new ForbiddenException('Invalid token');
+    }
+  }
+  async getOne(id: string) {
+    try {
+      return await prisma.user.findUniqueOrThrow({ where: { id } });
+    } catch (error) {
+      throw new ForbiddenException('User not found');
+    }
   }
 }
