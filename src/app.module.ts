@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthMiddleware } from './milddlerware/auth.middleware';
+//import { AuthMiddleware } from './milddlerware/auth.middleware';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-  imports: [UserModule, AuthModule,
+  imports: [UserModule, AuthModule, ChatModule,
    // MongooseModule.forRoot('mongodb://localhost/nest'), // Change this to your MongoDB connection string
 
   ],
@@ -15,13 +16,13 @@ import { AuthMiddleware } from './milddlerware/auth.middleware';
   providers: [AppService],
 })
 export class AppModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AuthMiddleware)
-      .exclude(
-        { path: '/api/users', method: RequestMethod.POST},
-        {path: '/api/users/login', method: RequestMethod.POST}
-      )
-      .forRoutes('')
-  }
+  // configure(consumer: MiddlewareConsumer) {
+  //   consumer
+  //     .apply(AuthMiddleware)
+  //     .exclude(
+  //       { path: '/api/users', method: RequestMethod.POST},
+  //       {path: '/api/users/login', method: RequestMethod.POST}
+  //     )
+  //     .forRoutes('')
+  // }
 }
