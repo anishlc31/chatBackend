@@ -7,5 +7,3 @@ export class ChatGateway {
     return 'Hello world!';
   }
 }
-
-
