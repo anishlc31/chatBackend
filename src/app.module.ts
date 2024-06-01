@@ -1,17 +1,20 @@
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtAuthGuard } from './auth/guards/jwt.guards';
 import { APP_GUARD } from '@nestjs/core';
+import { ChatModule } from './chat/chat.module';
+
+
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
 
-  AuthModule],
-  controllers: [AppController],
-  providers: [AppService , 
+  AuthModule,
+
+  ChatModule],
+  providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
