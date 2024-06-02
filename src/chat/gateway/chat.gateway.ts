@@ -4,11 +4,12 @@ import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { GetCurrentUserId } from 'src/auth/decorator/user.decorator';
 import { UserExtractorService } from '../user-extractor-service.service';
+import { RoomService } from '../room.service';
 
 @WebSocketGateway({ cors: { origin: ['https://hoppscotch.io', 'http://localhost:3000', 'http://localhost:4200'] } })
 export class ChatGateway implements OnGatewayConnection ,OnGatewayDisconnect {
   
-    constructor (private authSerive : AuthService , private readonly userExtractorService: UserExtractorService,
+    constructor (private roomService : RoomService , private readonly userExtractorService: UserExtractorService,
     ){
 
     }
@@ -16,7 +17,6 @@ export class ChatGateway implements OnGatewayConnection ,OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  title : string[] = [];
 
   async handleConnection(socket : Socket) {
 
@@ -30,8 +30,11 @@ export class ChatGateway implements OnGatewayConnection ,OnGatewayDisconnect {
 return  this.disconnet(socket)
 
       }else {
-this.title.push('value' + Math.random().toString());
-this.server.emit('message', this.title)
+        socket.data.user= userId;
+        const room = await this.roomService.getRoomForUser(userId, {page:1 , limit :10})
+
+        return this.server.to(socket.id).emit('rooms',room)
+
       }
 
     }catch{
@@ -50,16 +53,14 @@ private disconnet (socket : Socket){
 
 
 
-@SubscribeMessage('message')
-handleMessage(client: any, payload: any): string {
+@SubscribeMessage('createRoom')handleMessage(client: any, payload: any): string {
   return 'Hello world!';
 }
+async onCreateRoom(socket : Socket ){
+  return this.roomService.createRoom()
+}
 
 
 
 
 }
-
-
-//fpor push 
-
