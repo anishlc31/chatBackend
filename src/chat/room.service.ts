@@ -28,5 +28,4 @@ return newRoom;
 }
 
 
-//first i will work till now video up to 8 
-//to do that work i will do research about code of service and gataway to live chat 
+//Now it's turn to use chat gpt and research instead of copying and past of the video
