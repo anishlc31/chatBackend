@@ -53,14 +53,14 @@ private disconnet (socket : Socket){
 
 
 
-@SubscribeMessage('createRoom')handleMessage(client: any, payload: any): string {
-  return 'Hello world!';
+@SubscribeMessage('createRoom')
+async onCreateRoom(socket : Socket , room :string ){
+    console.log("socket id is equal to " + socket.data.user.id)
+    return this.roomService.createRoom( room ,socket.data.user )
+  
 }
-async onCreateRoom(socket : Socket ){
-  return this.roomService.createRoom()
 }
 
 
 
-
-}
+//no no no problem is not in service it's in how i deal with user and gateway , i will interconnect first 
