@@ -14,7 +14,8 @@ export class RoomService {
   }
 
   async getRoomForUser(userId: string, options: IPaginationOptions): Promise<Pagination<Room>> {
-    const { page, limit } = options;
+    const page = Number(options.page);
+    const limit = Number(options.limit);
 
     const rooms = await prisma.room.findMany({
       where: { userId },
