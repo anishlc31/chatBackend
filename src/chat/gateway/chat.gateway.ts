@@ -64,3 +64,5 @@ async onCreateRoom(socket : Socket , room :string ){
 
 
 //no no no problem is not in service it's in how i deal with user and gateway , i will interconnect first 
+// the only reason i am virgin i fuck my own life , idk how and why i am doing this but it's true     
+  
