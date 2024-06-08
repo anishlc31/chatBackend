@@ -16,6 +16,7 @@ export class UserExtractorService {
 
     const decodedToken = await this.authService.verifyJwt(token);
     const user = decodedToken as JwtPayload;
+    console.log(user)
     return user.sub;
   }
 }
