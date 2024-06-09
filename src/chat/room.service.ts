@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, Room } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { IPaginationOptions, Pagination } from 'nestjs-typeorm-paginate';
 
 const prisma = new PrismaClient();
@@ -8,12 +8,19 @@ const prisma = new PrismaClient();
 export class RoomService {
   constructor() {}
 
-  async createRoom(roomId: string, userId: string): Promise<Room> {
-    const newRoom = await this.addCreatorToRoom(roomId, userId);
+  async createRoom(roomId: string, userId: string) {
+    const newRoom = await prisma.room.create({
+      data: {
+        id: roomId,
+        userId: userId,
+        name: `Room ${roomId}`,
+        description: `Description for Room ${roomId}`,
+      },
+    });
     return newRoom;
   }
 
-  async getRoomForUser(userId: string, options: IPaginationOptions): Promise<Pagination<Room>> {
+  async getRoomForUser(userId: string, options: IPaginationOptions): Promise<Pagination<any>> {
     const page = Number(options.page);
     const limit = Number(options.limit);
 
@@ -38,18 +45,5 @@ export class RoomService {
         currentPage: page,
       },
     };
-  }
-
-  async addCreatorToRoom(roomId: string, userId: string): Promise<Room> {
-    const newRoom = await prisma.room.create({
-      data: {
-        id: roomId,
-        userId: userId,
-        name: `Room ${roomId}`,
-        description: `Description for Room ${roomId}`,
-      },
-    });
-
-    return newRoom;
   }
 }
