@@ -15,11 +15,9 @@ export class UserExtractorService {
       throw new UnauthorizedException('Token not provided');
     }
 
-    const token = authHeader.split(' ')[1]; // Extract the token after 'Bearer'
-    if (!token) {
-      throw new UnauthorizedException('Token not provided');
-    }
-
+    // Handle token without 'Bearer' prefix
+    const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
+    
     console.log('Extracted Token:', token);
 
     const decodedToken = await this.authService.verifyJwt(token);
