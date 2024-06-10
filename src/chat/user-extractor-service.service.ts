@@ -9,6 +9,8 @@ export class UserExtractorService {
 
   async extractUserId(socket: Socket): Promise<string> {
     const authHeader = socket.handshake.headers.authorization;
+    console.log('Auth Header:', authHeader);
+
     if (!authHeader) {
       throw new UnauthorizedException('Token not provided');
     }
@@ -22,7 +24,7 @@ export class UserExtractorService {
 
     const decodedToken = await this.authService.verifyJwt(token);
     const user = decodedToken as JwtPayload;
-    console.log(user);
+    console.log('Decoded Token:', user);
     return user.sub;
   }
 }
