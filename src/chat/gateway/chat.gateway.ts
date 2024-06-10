@@ -17,8 +17,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(socket: Socket) {
     try {
+      console.log('Headers:', socket.handshake.headers);
+
       const userId = await this.userExtractorService.extractUserId(socket);
-      console.log(userId);
+      console.log('User ID:', userId);
 
       if (!userId) {
         return this.disconnect(socket);
