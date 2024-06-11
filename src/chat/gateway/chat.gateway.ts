@@ -5,7 +5,9 @@ import { AuthService } from 'src/auth/auth.service';
 import { UserExtractorService } from '../user-extractor-service.service';
 import { RoomService } from '../room.service';
 
-@WebSocketGateway({ cors: { origin: ['https://hoppscotch.io', 'http://localhost:3000', 'http://localhost:4200'] } })
+@WebSocketGateway({
+  cors: { origin: ['https://hoppscotch.io', 'http://localhost:3000', 'http://localhost:4200'] },
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private roomService: RoomService,
@@ -18,7 +20,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(socket: Socket) {
     try {
       console.log('Headers:', socket.handshake.headers);
-
       const userId = await this.userExtractorService.extractUserId(socket);
       console.log('User ID:', userId);
 
@@ -35,7 +36,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: any) {}
+  handleDisconnect(client: Socket) {
+    console.log(`Client disconnected: ${client.id}`);
+  }
 
   private disconnect(socket: Socket) {
     socket.emit('Error', new UnauthorizedException());
@@ -44,7 +47,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('createRoom')
   async onCreateRoom(socket: Socket, room: string) {
-    console.log('socket id is equal to', socket.data.user);
+    console.log('Socket ID:', socket.data.user);
     return this.roomService.createRoom(room, socket.data.user);
   }
 }
