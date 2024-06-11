@@ -1,11 +1,11 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { loginDto, singupDto } from './dto';
 import * as argon from 'argon2';
 import { PrismaClient } from '@prisma/client';
-import { JwtPayload } from 'jsonwebtoken';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { JwtPayload } from './types';
 
 
 const prisma = new PrismaClient();
@@ -65,28 +65,54 @@ export class AuthService {
     return tokens;
   }
 
+
     async getTokens(userId: string, email: string) {
-        const jwtPayload: JwtPayload = {
+      const jwtPayload: JwtPayload = {
           sub: userId,
           email: email,
-        };
-    
-        const token = await Promise.all([
-          this.jwtService.signAsync(jwtPayload, {
-            secret: this.configService.get<string>('JWT_SECRET'),
-            expiresIn: '15m',
-          }),
-       
-        ]);
-    
-        return token
-    
-      }
-
+      };
+  
+      const token = await this.jwtService.signAsync(jwtPayload, {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: this.configService.get<string>('JWT_LIFETIME'),
+      });
+  
+      return { access_token: token };
+  }
+  
 
       async logout(userId: string) {
       
         return true;
       }
+
+
+   
+  async verifyJwt(token: string): Promise<JwtPayload> {
+    try {
+      return this.jwtService.verify<JwtPayload>(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+    } catch (error) {
+      console.error('JWT Verification Error:', error.message);
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+
+
+    async getOne(userId: string) {
+      const user = await prisma.user.findUnique({
+          where: {
+              id: userId,
+          },
+      });
+
+      if (!user) {
+          throw new ForbiddenException('User not found');
+      }
+
+      return user;
+  }
 
 }
