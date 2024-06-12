@@ -58,20 +58,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // }
 
 
-  @SubscribeMessage('message')
-  handleMessage(client:any , payload : any )  {
- this.server.emit('message', 'test ')
-  }
+  title : string [] = []; 
 
 
-  handleConnection(client: any, ...args: any[]) {
-    console.log('connected ')
-    this.server.emit('message', 'test ')
+
+
+  async handleConnection(socket : Socket ) {
+
+     try{
+
+          const userId = await this.userExtractorService.extractUserId(socket);
+          if(!userId){
+           return  this.disconnected(socket)
+
+          }else{
+            this.title.push('value' + Math.random().toString())
+            this.server.emit('message' ,this.title)
+          }
+
+       
+     }catch{
+    return   this.disconnected(socket)
+
+
+     }
 
   }
 
    handleDisconnect(client: Socket) {
     console.log('disconnected ')
+  }
+
+
+  private disconnected (soket : Socket  ){
+
+    soket.emit('error ' , new UnauthorizedException)
+    soket.disconnect()
+     
   }
   
 }
