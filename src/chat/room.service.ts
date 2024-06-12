@@ -1,49 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { IPaginationOptions, Pagination } from 'nestjs-typeorm-paginate';
+import { PrismaClient, Room, User } from '@prisma/client';
+import { Pagination, paginate } from 'nestjs-typeorm-paginate';
 
 const prisma = new PrismaClient();
+
 
 @Injectable()
 export class RoomService {
   constructor() {}
 
-  async createRoom(roomId: string, userId: string) {
-    const newRoom = await prisma.room.create({
+  async createRoom(roomData: { name: string }, creatorId: string): Promise<Room> {
+    const room = await prisma.room.create({
       data: {
-        id: roomId,
-        userId: userId,
-        name: `Room ${roomId}`,
-        description: `Description for Room ${roomId}`,
+        name: roomData.name,
+        users: {
+          connect: { id: creatorId },
+        },
       },
     });
-    return newRoom;
+    return room;
   }
 
-  async getRoomForUser(userId: string, options: IPaginationOptions): Promise<Pagination<any>> {
-    const page = Number(options.page);
-    const limit = Number(options.limit);
-
-    const rooms = await prisma.room.findMany({
-      where: { userId },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
+  async getRoom(roomId: string): Promise<Room | null> {
+    return prisma.room.findUnique({
+      where: { id: roomId },
+      include: { users: true },
     });
+  }
 
-    const totalRooms = await prisma.room.count({
-      where: { userId },
-    });
+  async getRoomsForUser(userId: string, options: { page: number; limit: number }): Promise<Pagination<Room>> {
+    const [rooms, total] = await prisma.$transaction([
+      prisma.room.findMany({
+        where: {
+          users: { some: { id: userId } },
+        },
+        include: { users: true },
+        orderBy: { updatedAt: 'desc' },
+        skip: (options.page - 1) * options.limit,
+        take: options.limit,
+      }),
+      this.prisma.room.count({
+        where: {
+          users: { some: { id: userId } },
+        },
+      }),
+    ]);
 
-    return {
-      items: rooms,
-      meta: {
-        totalItems: totalRooms,
-        itemCount: rooms.length,
-        itemsPerPage: limit,
-        totalPages: Math.ceil(totalRooms / limit),
-        currentPage: page,
-      },
-    };
+    return paginate(rooms, options, total);
   }
 }
