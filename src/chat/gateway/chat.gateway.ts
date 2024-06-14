@@ -1,7 +1,6 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { AuthService } from 'src/auth/auth.service';
 import { UserExtractorService } from '../user-extractor-service.service';
 import { RoomService } from '../room.service';
 
@@ -18,21 +17,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   async handleConnection(socket: Socket) {
+    console.log('Client connected:', socket.id);
     try {
       const userId = await this.userExtractorService.extractUserId(socket);
+      console.log('Extracted userId:', userId);
+
       if (!userId) {
+        console.log('User ID not found, disconnecting...');
         return this.disconnect(socket);
       } else {
         socket.data.user = userId;
         const rooms = await this.roomService.getRoomsForUser(userId, { page: 1, limit: 10 });
+        console.log('Rooms for user:', rooms);
         return this.server.to(socket.id).emit('rooms', rooms);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error during connection:', error);
       return this.disconnect(socket);
     }
   }
 
   handleDisconnect(socket: Socket) {
+    console.log('Client disconnected:', socket.id);
     return this.disconnect(socket);
   }
 
@@ -43,11 +49,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('createRoom')
   async onCreateRoom(socket: Socket, roomData: any) {
+    console.log('Received createRoom event with data:', roomData);
     try {
-      const createdRoom = await this.roomService.createRoom(roomData, socket.data.user);
-      const rooms = await this.roomService.getRoomsForUser(socket.data.user, { page: 1, limit: 10 });
+      const userId = socket.data.user;
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+      console.log('Creating room with data:', roomData, 'for user:', userId);
+      const createdRoom = await this.roomService.createRoom(roomData, userId);
+      console.log('Room created:', createdRoom);
+      const rooms = await this.roomService.getRoomsForUser(userId, { page: 1, limit: 10 });
+      console.log('Updated rooms for user:', rooms);
       return this.server.to(socket.id).emit('rooms', rooms);
     } catch (error) {
+      console.error('Error creating room:', error);
       socket.emit('Error', error);
     }
   }
