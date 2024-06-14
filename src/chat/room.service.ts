@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, Room, User } from '@prisma/client';
+import { PrismaClient, Room } from '@prisma/client';
 import { IPaginationOptions, Pagination } from 'nestjs-typeorm-paginate';
 
 @Injectable()
