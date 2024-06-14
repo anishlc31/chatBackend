@@ -9,7 +9,7 @@ export class UserExtractorService {
 
   async extractUserId(socket: Socket): Promise<string> {
     const authHeader = socket.handshake.headers.authorization;
-    console.log('Auth Header:', authHeader);
+  //  console.log('Auth Header:', authHeader);
 
     if (!authHeader) {
       throw new UnauthorizedException('Token not provided');
@@ -17,12 +17,16 @@ export class UserExtractorService {
 
     // Handle token without 'Bearer' prefix
     const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
-    
-    console.log('Extracted Token:', token);
+   // console.log('Extracted Token:', token);
 
-    const decodedToken = await this.authService.verifyJwt(token);
-    const user = decodedToken as JwtPayload;
-    console.log('Decoded Token:', user);
-    return user.sub;
+    try {
+      const decodedToken = await this.authService.verifyJwt(token);
+      const user = decodedToken as JwtPayload;
+     // console.log('Decoded Token:', user);
+      return user.sub;
+    } catch (error) {
+      console.error('Token Verification Error:', error);
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }
