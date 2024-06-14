@@ -17,84 +17,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  // async handleConnection(socket: Socket) {
-  //   try {
-  //     // console.log('Headers:', socket.handshake.headers);
-  //     const userId = await this.userExtractorService.extractUserId(socket);
-  //     console.log('User ID:', userId);
-  
-  //     if (!userId) {
-  //       return this.disconnect(socket);
-  //     } else {
-  //       socket.data.user = userId;
-  //       console.log('Socket data after setting user:', socket.data);
-  //       const room = await this.roomService.getRoomForUser(userId, { page: 1, limit: 10 });
-  //       return this.server.to(socket.id).emit('rooms', room);
-  //     }
-  //   } catch (error) {
-  //     console.error('Connection Error:', error);
-  //     return this.disconnect(socket);
-  //   }
-  // }
-  
-
-  // handleDisconnect(client: Socket) {
-  //   //console.log(`Client disconnected: ${client.id}`);
-  // }
-
-  // private disconnect(socket: Socket) {
-  //   socket.emit('Error', new UnauthorizedException());
-  //   socket.disconnect();
-  // }
-
-
-
-
-
-  // @SubscribeMessage('createRoom')
-  // async onCreateRoom(socket: Socket, room: string) {
-  //   console.log('Socket ID:', socket.data.user);
-  //   return this.roomService.createRoom(room, socket.data.user);
-  // }
-
-
-  title : string [] = []; 
-
-
-
-
-  async handleConnection(socket : Socket ) {
-
-     try{
-
-          const userId = await this.userExtractorService.extractUserId(socket);
-          if(!userId){
-           return  this.disconnected(socket)
-
-          }else{
-            this.title.push('value' + Math.random().toString())
-            this.server.emit('message' ,this.title)
-          }
-
-       
-     }catch{
-    return   this.disconnected(socket)
-
-
-     }
-
+  async handleConnection(socket: Socket) {
+    try {
+      const userId = await this.userExtractorService.extractUserId(socket);
+      if (!userId) {
+        return this.disconnect(socket);
+      } else {
+        socket.data.user = userId;
+        const rooms = await this.roomService.getRoomsForUser(userId, { page: 1, limit: 10 });
+        return this.server.to(socket.id).emit('rooms', rooms);
+      }
+    } catch {
+      return this.disconnect(socket);
+    }
   }
 
-   handleDisconnect(client: Socket) {
-    console.log('disconnected ')
+  handleDisconnect(socket: Socket) {
+    return this.disconnect(socket);
   }
 
-
-  private disconnected (soket : Socket  ){
-
-    soket.emit('error ' , new UnauthorizedException)
-    soket.disconnect()
-     
+  private disconnect(socket: Socket) {
+    socket.emit('Error', new UnauthorizedException());
+    socket.disconnect();
   }
-  
+
+  @SubscribeMessage('createRoom')
+  async onCreateRoom(socket: Socket, roomData: any) {
+    try {
+      const createdRoom = await this.roomService.createRoom(roomData, socket.data.user);
+      const rooms = await this.roomService.getRoomsForUser(socket.data.user, { page: 1, limit: 10 });
+      return this.server.to(socket.id).emit('rooms', rooms);
+    } catch (error) {
+      socket.emit('Error', error);
+    }
+  }
 }
