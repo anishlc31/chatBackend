@@ -2,34 +2,38 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClient, Room, User } from '@prisma/client';
 import { IPaginationOptions, Pagination } from 'nestjs-typeorm-paginate';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class RoomService {
+  private readonly prisma = new PrismaClient();
+
   constructor() {}
 
-  async createRoom(room: Room, creator: User): Promise<Room> {
-    const newRoom = await this.addCreatorToRoom(room, creator);
-    return prisma.room.create({
-      data: newRoom,
+  async createRoom(room: Omit<Room, 'id' | 'createdAt' | 'updatedAt'>, creatorId: string): Promise<Room> {
+    return this.prisma.room.create({
+      data: {
+        ...room,
+        userId: creatorId,
+      },
+      include: {
+        users: true,
+      },
     });
   }
 
   async getRoom(roomId: string): Promise<Room | null> {
-    return prisma.room.findUnique({
+    return this.prisma.room.findUnique({
       where: { id: roomId },
       include: { users: true },
     });
   }
 
-  async getRoomsForUser(userId: number, options: IPaginationOptions): Promise<Pagination<Room>> {
-    const query = prisma.room.findMany({
+  async getRoomsForUser(userId: string, options: IPaginationOptions): Promise<Pagination<Room>> {
+    const skip = (Number(options.page) - 1) * Number(options.limit);
+    const take = Number(options.limit);
+
+    const rooms = await this.prisma.room.findMany({
       where: {
-        users: {
-          some: {
-            id: userId,
-          },
-        },
+        userId,
       },
       include: {
         users: true,
@@ -37,36 +41,25 @@ export class RoomService {
       orderBy: {
         updatedAt: 'desc',
       },
-      skip: options.page * options.limit,
-      take: options.limit,
+      skip,
+      take,
     });
 
-    const totalCount = await prisma.room.count({
+    const totalCount = await this.prisma.room.count({
       where: {
-        users: {
-          some: {
-            id: userId,
-          },
-        },
+        userId,
       },
     });
-
-    const rooms = await query;
 
     return {
       items: rooms,
       meta: {
         totalItems: totalCount,
         itemCount: rooms.length,
-        itemsPerPage: options.limit,
-        totalPages: Math.ceil(totalCount / options.limit),
-        currentPage: options.page,
+        itemsPerPage: take,
+        totalPages: Math.ceil(totalCount / take),
+        currentPage: Number(options.page),
       },
     };
-  }
-
-  async addCreatorToRoom(room: Room, creator: User): Promise<Room> {
-    room.users = [...room.users, creator];
-    return room;
   }
 }
