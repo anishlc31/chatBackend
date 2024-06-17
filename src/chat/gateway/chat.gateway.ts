@@ -57,7 +57,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('createRoom')
   async onCreateRoom(socket: Socket, payload: { data: CreateRoomDto }) {
-    console.log('Received createRoom event with data:', payload);
     try {
       const userId = socket.data.user;
       if (!userId) {
@@ -70,12 +69,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       createRoomDto.description = description;
 
       await validateOrReject(createRoomDto);
-
-      console.log('Creating room with data:', createRoomDto, 'for user:', userId);
       const createdRoom = await this.roomService.createRoom(createRoomDto, userId);
-      console.log('Room created:', createdRoom);
       const rooms = await this.roomService.getRoomsForUser(userId, { page: 1, limit: 10 });
-      console.log('Updated rooms for user:', rooms);
       return this.server.to(socket.id).emit('rooms', rooms);
     } catch (error) {
       console.error('Error creating room:', error);
@@ -83,3 +78,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 }
+
+// for rest 
+
+
