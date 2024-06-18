@@ -79,6 +79,3 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 }
 
-// for rest 
-
-
