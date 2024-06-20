@@ -6,6 +6,7 @@ import * as argon from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtPayload } from './types';
+import { Like } from 'typeorm';
 
 
 const prisma = new PrismaClient();
@@ -113,6 +114,18 @@ export class AuthService {
       }
 
       return user;
+  }
+
+
+  async findAllByUsername(Username: string) {
+    return prisma.user.findMany({
+      where: {
+        Username: {
+          contains: Username.toLowerCase(),
+          mode: 'insensitive',
+        },
+      },
+    });
   }
 
 }
