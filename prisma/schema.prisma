@@ -22,6 +22,7 @@ model User {
   verificationToken String?  
   isVerified        Boolean  @default(false)
   rooms Room[]
+   connections        ConnectedUser[]
 }
 
 model Room {
@@ -33,4 +34,16 @@ model Room {
   userId  String @db.ObjectId
 
   users   User   @relation(fields: [userId], references: [id])
+}
+
+
+model ConnectedUser {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  socketId    String
+  userId      String  @db.ObjectId
+  user        User    @relation(fields: [userId], references: [id])
+
+  // Optional: add timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
