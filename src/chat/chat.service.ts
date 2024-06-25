@@ -12,6 +12,7 @@ export class ChatService {
         content,
         senderId,
         receiverId,
+        createdAt: new Date()
       },
     });
   }
