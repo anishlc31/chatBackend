@@ -16,11 +16,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+   // console.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    //console.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('sendMessage')
@@ -30,8 +30,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const message = await this.chatService.sendMessage(data.senderId, data.receiverId, data.content);
     this.server.to(data.receiverId).emit('receiveMessage', message);
+    this.server.to(data.senderId).emit('updateUserList', { userId: data.receiverId });
+    this.server.to(data.receiverId).emit('updateUserList', { userId: data.senderId });
     return message;
   }
+  
+
 
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
@@ -50,4 +54,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const messages = await this.chatService.getMessagesBetweenUsers(data.user1Id, data.user2Id, data.skip, data.take);
     return messages;
   }
+
+
+
 }
