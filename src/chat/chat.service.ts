@@ -12,7 +12,8 @@ export class ChatService {
         content,
         senderId,
         receiverId,
-        createdAt: new Date()
+        createdAt: new Date(),
+          seen: false,
       },
     });
   }
@@ -32,4 +33,19 @@ export class ChatService {
       take: take,
     });
   }
+
+  async markMessagesAsSeen(senderId: string, receiverId: string) {
+    return prisma.message.updateMany({
+      where: {
+        senderId,
+        receiverId,
+        seen: false,
+      },
+      data: {
+        seen: true,
+      },
+    });
+  }
+  
+
 }
