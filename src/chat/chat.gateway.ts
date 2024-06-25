@@ -52,9 +52,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const messages = await this.chatService.getMessagesBetweenUsers(data.user1Id, data.user2Id, data.skip, data.take);
+    await this.chatService.markMessagesAsSeen(data.user2Id, data.user1Id); // Mark messages as seen
     return messages;
   }
-
+  
 
 
 }
