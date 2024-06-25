@@ -34,6 +34,7 @@ model Message {
   createdAt DateTime @default(now())
   sender    User     @relation("SentMessages", fields: [senderId], references: [id])
   receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-    seen        Boolean  @default(false) // Add this field
+    seen        Boolean  @default(false) 
+  status      String   @default("sent") 
 
 }
