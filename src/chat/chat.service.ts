@@ -14,6 +14,8 @@ export class ChatService {
         receiverId,
         createdAt: new Date(),
           seen: false,
+          status: 'sent', 
+
       },
     });
   }
@@ -43,7 +45,18 @@ export class ChatService {
       },
       data: {
         seen: true,
+        status:'seen'
       },
+    });
+ 
+  }
+
+
+
+  async markMessageAsDelivered(messageId: string) {
+    return prisma.message.update({
+      where: { id: messageId },
+      data: { status: 'delivered' },
     });
   }
   
