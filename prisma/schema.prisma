@@ -24,6 +24,7 @@ model User {
   isVerified        Boolean   @default(false)
   sentMessages      Message[] @relation("SentMessages")
   receivedMessages  Message[] @relation("ReceivedMessages")
+  isOnline          Boolean   @default(false) // Track online status
 }
 
 model Message {
@@ -34,7 +35,12 @@ model Message {
   createdAt DateTime @default(now())
   sender    User     @relation("SentMessages", fields: [senderId], references: [id])
   receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  seen        Boolean  @default(false) 
-  status      String   @default("sent") 
+  seen      Boolean  @default(false)
+  status    MessageStatus @default(SENT)
+}
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  SEEN
 }
