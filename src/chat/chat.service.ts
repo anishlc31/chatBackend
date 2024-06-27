@@ -29,7 +29,7 @@ export class ChatService {
         ],
       },
       orderBy: {
-        createdAt: 'desc', // Fetch most recent messages first
+        createdAt: 'desc',
       },
       skip: skip,
       take: take,
