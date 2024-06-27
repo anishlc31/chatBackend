@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, MessageStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,9 +13,8 @@ export class ChatService {
         senderId,
         receiverId,
         createdAt: new Date(),
-          seen: false,
-          status: 'sent', 
-
+        seen: false,
+        status: MessageStatus.SENT, 
       },
     });
   }
@@ -45,20 +44,22 @@ export class ChatService {
       },
       data: {
         seen: true,
-        status:'seen'
+        status: MessageStatus.SEEN,
       },
     });
- 
   }
-
-
 
   async markMessageAsDelivered(messageId: string) {
     return prisma.message.update({
       where: { id: messageId },
-      data: { status: 'delivered' },
+      data: { status: MessageStatus.DELIVERED },
     });
   }
-  
 
+  async setUserOnlineStatus(userId: string, isOnline: boolean) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { isOnline },
+    });
+  }
 }
