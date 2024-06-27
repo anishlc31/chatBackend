@@ -1,7 +1,6 @@
 import { ChatService } from './chat.service';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-// chat.gateway.ts
 
 @WebSocketGateway({
   cors: { origin: ['https://hoppscotch.io', 'http://localhost:3000', 'http://localhost:4200'] },
@@ -18,12 +17,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log('WebSocket server initialized');
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
+    const userId = Array.isArray(client.handshake.query.userId)
+      ? client.handshake.query.userId[0]
+      : client.handshake.query.userId as string;
+
+    if (userId) {
+      await this.chatService.setUserOnlineStatus(userId, true);
+      this.server.emit('userOnlineStatus', { userId, isOnline: true });
+    }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
+    const userId = Array.isArray(client.handshake.query.userId)
+      ? client.handshake.query.userId[0]
+      : client.handshake.query.userId as string;
+
+    if (userId) {
+      await this.chatService.setUserOnlineStatus(userId, false);
+      this.server.emit('userOnlineStatus', { userId, isOnline: false });
+    }
   }
 
   @SubscribeMessage('joinRoom')
@@ -68,12 +83,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.server.to(data.receiverId).emit('userTyping', { senderId: data.senderId, typing: true });
 
-    // Clear any existing timeout for the sender
     if (this.typingTimers[data.senderId]) {
       clearTimeout(this.typingTimers[data.senderId]);
     }
 
-    // Set a new timeout to stop typing status after 3 seconds
     this.typingTimers[data.senderId] = setTimeout(() => {
       this.server.to(data.receiverId).emit('userTyping', { senderId: data.senderId, typing: false });
     }, 3000);
@@ -86,7 +99,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.server.to(data.receiverId).emit('userTyping', { senderId: data.senderId, typing: false });
 
-    // Clear the typing timeout if the user stops typing
     if (this.typingTimers[data.senderId]) {
       clearTimeout(this.typingTimers[data.senderId]);
       delete this.typingTimers[data.senderId];
