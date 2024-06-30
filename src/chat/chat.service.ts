@@ -5,13 +5,26 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class ChatService {
+
+  async createConversation(user1Id: string, user2Id: string) {
+    return prisma.conversation.create({
+      data: {
+        user1Id,
+        user2Id,
+      },
+    });
+  }
   
-  async sendMessage(senderId: string, receiverId: string, content: string) {
+  async sendMessage(senderId: string, receiverId: string, content: string, conversationId: string) {
+
+   
+  
     return prisma.message.create({
       data: {
         content,
         senderId,
         receiverId,
+        conversationId,
         createdAt: new Date(),
         seen: false,
         status: MessageStatus.SENT, 
@@ -19,27 +32,26 @@ export class ChatService {
     });
   }
 
-  async getMessagesBetweenUsers(user1Id: string, user2Id: string, skip: number, take: number) {
+  async getMessagesInConversation(conversationId: string, skip: number, take: number) {
     return prisma.message.findMany({
       where: {
-        OR: [
-          { senderId: user1Id, receiverId: user2Id },
-          { senderId: user2Id, receiverId: user1Id },
-        ],
+        conversationId,
       },
       orderBy: {
         createdAt: 'desc',
       },
-      skip: skip,
-      take: take,
+      skip,
+      take,
     });
   }
 
-  async markMessagesAsSeen(senderId: string, receiverId: string) {
+
+
+  async markMessagesAsSeen(conversationId: string, senderId: string) {
     return prisma.message.updateMany({
       where: {
+        conversationId,
         senderId,
-        receiverId,
         seen: false,
       },
       data: {
@@ -60,6 +72,14 @@ export class ChatService {
     return prisma.user.update({
       where: { id: userId },
       data: { isOnline },
+    });
+  }
+
+
+  async updateMessageStatus(messageId: string, status: MessageStatus) {
+    return prisma.message.update({
+      where: { id: messageId },
+      data: { status },
     });
   }
 }
