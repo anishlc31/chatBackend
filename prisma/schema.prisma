@@ -14,29 +14,43 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   password          String
-  Username          String
+  username          String
   email             String
   verificationToken String?
-  isVerified        Boolean   @default(false)
-  sentMessages      Message[] @relation("SentMessages")
-  receivedMessages  Message[] @relation("ReceivedMessages")
-  isOnline          Boolean   @default(false) // Track online status
+  isVerified        Boolean        @default(false)
+  sentMessages      Message[]      @relation("SentMessages")
+  receivedMessages  Message[]      @relation("ReceivedMessages")
+  isOnline          Boolean        @default(false)
+  conversations1    Conversation[] @relation("User1Conversations")
+  conversations2    Conversation[] @relation("User2Conversations")
+}
+
+model Conversation {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  user1     User      @relation("User1Conversations", fields: [user1Id], references: [id])
+  user1Id   String    @db.ObjectId
+  user2     User      @relation("User2Conversations", fields: [user2Id], references: [id])
+  user2Id   String    @db.ObjectId
+  messages  Message[]
+  createdAt DateTime  @default(now())
 }
 
 model Message {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  senderId  String   @db.ObjectId
-  receiverId String   @db.ObjectId
-  createdAt DateTime @default(now())
-  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  seen      Boolean  @default(false)
-  status    MessageStatus @default(SENT)
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  content        String
+  senderId       String        @db.ObjectId
+  receiverId     String        @db.ObjectId
+  conversationId String        @db.ObjectId
+  createdAt      DateTime      @default(now())
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  seen           Boolean       @default(false)
+  status         MessageStatus @default(SENT)
 }
 
 enum MessageStatus {
