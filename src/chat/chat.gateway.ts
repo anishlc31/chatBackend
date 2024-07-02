@@ -23,10 +23,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ? client.handshake.query.userId[0]
       : client.handshake.query.userId as string;
 
-    if (userId) {
-      await this.chatService.setUserOnlineStatus(userId, true);
-      this.server.emit('userOnlineStatus', { userId, isOnline: true });
-    }
   }
 
   async handleDisconnect(client: Socket) {
@@ -35,10 +31,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ? client.handshake.query.userId[0]
       : client.handshake.query.userId as string;
 
-    if (userId) {
-      await this.chatService.setUserOnlineStatus(userId, false);
-      this.server.emit('userOnlineStatus', { userId, isOnline: false });
-    }
+   
   }
 
   @SubscribeMessage('joinRoom')
@@ -51,29 +44,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('sendMessage')
-  @SubscribeMessage('sendMessage')
-async handleMessage(
-  @MessageBody() data: { senderId: string; receiverId: string; content: string; conversationId: string },
-  @ConnectedSocket() client: Socket,
-) {
-  const message = await this.chatService.sendMessage(data.senderId, data.receiverId, data.content, data.conversationId);
-  this.server.to(data.receiverId).emit('receiveMessage', message);
-  this.server.to(data.senderId).emit('updateMessageStatus', { messageId: message.id, status: 'delivered' });
-  this.server.to(data.senderId).emit('updateUserList', { userId: data.receiverId });
-  this.server.to(data.receiverId).emit('updateUserList', { userId: data.senderId });
-  await this.chatService.markMessageAsDelivered(message.id);
+  async handleMessage(
+    @MessageBody() data: { senderId: string; receiverId: string; content: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const message = await this.chatService.sendMessage(data.senderId, data.receiverId, data.content);
+    this.server.to(data.receiverId).emit('receiveMessage', message);
+    this.server.to(data.senderId).emit('updateMessageStatus', { messageId: message.id, status: 'delivered' });
+    this.server.to(data.senderId).emit('updateUserList', { userId: data.receiverId });
+    this.server.to(data.receiverId).emit('updateUserList', { userId: data.senderId });
+    await this.chatService.markMessageAsDelivered(message.id);
 
-  return message;
-}
+    return message;
+  }
 
-@SubscribeMessage('getMessages')
-async handleGetMessages(
-  @MessageBody() data: { conversationId: string; skip: number; take: number },
-  @ConnectedSocket() client: Socket,
-) {
-  const messages = await this.chatService.getMessagesInConversation(data.conversationId, data.skip, data.take);
-  return messages;
-}
+  @SubscribeMessage('getMessages')
+  async handleGetMessages(
+    @MessageBody() data: { user1Id: string; user2Id: string; skip: number; take: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const messages = await this.chatService.getMessagesBetweenUsers(data.user1Id, data.user2Id, data.skip, data.take);
+    
+    await this.chatService.markMessagesAsSeen(data.user2Id, data.user1Id); // Mark messages as seen
+    return messages;
+  }
 
   @SubscribeMessage('typing')
   handleTyping(
@@ -104,4 +98,3 @@ async handleGetMessages(
     }
   }
 }
-
