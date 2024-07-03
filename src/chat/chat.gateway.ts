@@ -16,22 +16,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   afterInit(server: Server) {
     console.log('WebSocket server initialized');
   }
-
   async handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
-    const userId = Array.isArray(client.handshake.query.userId)
-      ? client.handshake.query.userId[0]
-      : client.handshake.query.userId as string;
-
+    const userId = client.handshake.query.userId as string;
+    await this.sendUnseenMessageCounts(userId);
   }
 
   async handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
-    const userId = Array.isArray(client.handshake.query.userId)
-      ? client.handshake.query.userId[0]
-      : client.handshake.query.userId as string;
-
-   
   }
 
   @SubscribeMessage('joinRoom')
@@ -40,6 +32,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     client.join(userId);
+    this.sendUnseenMessageCounts(userId);
     console.log(`Client ${client.id} joined room ${userId}`);
   }
 
@@ -50,10 +43,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const message = await this.chatService.sendMessage(data.senderId, data.receiverId, data.content);
     this.server.to(data.receiverId).emit('receiveMessage', message);
-    this.server.to(data.senderId).emit('updateMessageStatus', { messageId: message.id, status: 'delivered' });
-    this.server.to(data.senderId).emit('updateUserList', { userId: data.receiverId });
-    this.server.to(data.receiverId).emit('updateUserList', { userId: data.senderId });
-    await this.chatService.markMessageAsDelivered(message.id);
+    await this.sendUnseenMessageCounts(data.senderId);
+    await this.sendUnseenMessageCounts(data.receiverId);
+   
 
     return message;
   }
@@ -64,8 +56,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const messages = await this.chatService.getMessagesBetweenUsers(data.user1Id, data.user2Id, data.skip, data.take);
-    
-    await this.chatService.markMessagesAsSeen(data.user2Id, data.user1Id); // Mark messages as seen
+    await this.chatService.markMessagesAsSeen(data.user2Id, data.user1Id); 
+    await this.sendUnseenMessageCounts(data.user1Id);
+    await this.sendUnseenMessageCounts(data.user2Id);
+
     return messages;
   }
 
@@ -96,5 +90,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       clearTimeout(this.typingTimers[data.senderId]);
       delete this.typingTimers[data.senderId];
     }
+  }
+
+
+
+  @SubscribeMessage('requestUnseenMessageCounts')
+  async handleRequestUnseenMessageCounts(
+    @MessageBody() userId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    await this.sendUnseenMessageCounts(userId);
+  }
+
+  private async sendUnseenMessageCounts(userId: string) {
+    const counts = await this.chatService.getUnseenMessageCounts(userId);
+    this.server.to(userId).emit('unseenMessageCounts', counts);
   }
 }
