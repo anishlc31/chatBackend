@@ -5,53 +5,83 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class ChatService {
+  
+  async sendMessage(senderId: string, receiverId: string, content: string) {
 
-  async createConversation(user1Id: string, user2Id: string) {
-    return prisma.conversation.create({
-      data: {
-        user1Id,
-        user2Id,
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        OR: [
+          { user1Id: senderId, user2Id: receiverId },
+          { user1Id: receiverId, user2Id: senderId },
+        ],
       },
     });
-  }
-  
-  async sendMessage(senderId: string, receiverId: string, content: string, conversationId: string) {
 
-   
-  
-    return prisma.message.create({
+    // If no conversation exists, create one
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          user1Id: senderId,
+          user2Id: receiverId,
+          unseenMessageCountOfUser1: 0,
+          unseenMessageCountOfUser2: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    }
+
+
+    
+    const message =  prisma.message.create({
       data: {
         content,
         senderId,
         receiverId,
-        conversationId,
         createdAt: new Date(),
         seen: false,
         status: MessageStatus.SENT, 
+        conversationId: conversation.id,
+
       },
     });
+
+    if (conversation.user1Id === receiverId) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { unseenMessageCountOfUser1: { increment: 1 } },
+      });
+    } else if (conversation.user2Id === receiverId) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { unseenMessageCountOfUser2: { increment: 1 } },
+      });
+    }
+
+    return message;
   }
 
-  async getMessagesInConversation(conversationId: string, skip: number, take: number) {
+  async getMessagesBetweenUsers(user1Id: string, user2Id: string, skip: number, take: number) {
     return prisma.message.findMany({
       where: {
-        conversationId,
+        OR: [
+          { senderId: user1Id, receiverId: user2Id },
+          { senderId: user2Id, receiverId: user1Id },
+        ],
       },
       orderBy: {
         createdAt: 'desc',
       },
-      skip,
-      take,
+      skip: skip,
+      take: take,
     });
   }
-
-
-
-  async markMessagesAsSeen(conversationId: string, senderId: string) {
-    return prisma.message.updateMany({
+//making seen msg 
+  async markMessagesAsSeen(senderId: string, receiverId: string) {
+   const makeSeen =   prisma.message.updateMany({
       where: {
-        conversationId,
         senderId,
+        receiverId,
         seen: false,
       },
       data: {
@@ -59,27 +89,56 @@ export class ChatService {
         status: MessageStatus.SEEN,
       },
     });
-  }
-
-  async markMessageAsDelivered(messageId: string) {
-    return prisma.message.update({
-      where: { id: messageId },
-      data: { status: MessageStatus.DELIVERED },
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        OR: [
+          { user1Id: senderId, user2Id: receiverId },
+          { user1Id: receiverId, user2Id: senderId },
+        ],
+      },
     });
+
+    if (conversation) {
+      if (conversation.user1Id === senderId) {
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { unseenMessageCountOfUser2: 0 },
+        });
+      } else if (conversation.user2Id === senderId) {
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { unseenMessageCountOfUser1: 0 },
+        });
+      }
+    }
+
+return makeSeen;
   }
 
-  async setUserOnlineStatus(userId: string, isOnline: boolean) {
-    return prisma.user.update({
-      where: { id: userId },
-      data: { isOnline },
+  
+
+  async getUnseenMessageCounts(userId: string) {
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        OR: [
+          { user1Id: userId },
+          { user2Id: userId },
+        ],
+      },
     });
-  }
 
 
-  async updateMessageStatus(messageId: string, status: MessageStatus) {
-    return prisma.message.update({
-      where: { id: messageId },
-      data: { status },
-    });
+//for unseen msg 
+    const unseenMessageCounts = conversations.reduce((acc, conversation) => {
+      if (conversation.user1Id === userId) {
+        acc[conversation.user2Id] = conversation.unseenMessageCountOfUser1;
+      } else {
+        acc[conversation.user1Id] = conversation.unseenMessageCountOfUser2;
+      }
+      return acc;
+    }, {});
+
+    return unseenMessageCounts;
   }
+  
 }
