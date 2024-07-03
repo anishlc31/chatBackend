@@ -58,6 +58,7 @@ export class ChatService {
       });
     }
 
+
     return message;
   }
 
@@ -116,7 +117,7 @@ return makeSeen;
   }
 
   
-
+//unseen msg count 
   async getUnseenMessageCounts(userId: string) {
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -128,7 +129,6 @@ return makeSeen;
     });
 
 
-//for unseen msg 
     const unseenMessageCounts = conversations.reduce((acc, conversation) => {
       if (conversation.user1Id === userId) {
         acc[conversation.user2Id] = conversation.unseenMessageCountOfUser1;
@@ -139,6 +139,16 @@ return makeSeen;
     }, {});
 
     return unseenMessageCounts;
+  }
+
+
+  //deliver msg 
+
+  async markMessageAsDelivered(messageId: string) {
+    await prisma.message.update({
+      where: { id: messageId },
+      data: { status: MessageStatus.DELIVERED },
+    });
   }
   
 }
