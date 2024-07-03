@@ -21,7 +21,6 @@ model User {
   username          String
   email             String
   verificationToken String?
-  unseenMessageCount Int      @default(0)
   isVerified        Boolean   @default(false)
   sentMessages      Message[] @relation("SentMessages")
   receivedMessages  Message[] @relation("ReceivedMessages")
@@ -40,7 +39,7 @@ model Message {
   receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   seen      Boolean  @default(false)
   status    MessageStatus @default(SENT)
-   conversationId String  @db.ObjectId
+  conversationId String  @db.ObjectId
   conversation Conversation @relation(fields: [conversationId], references: [id])
 }
 
@@ -50,13 +49,12 @@ model Conversation {
   updatedAt         DateTime      @updatedAt
   user1Id           String        @db.ObjectId
   user2Id           String        @db.ObjectId
-  unseenMessageCount Int          @default(0)
+  unseenMessageCountOfUser1 Int          @default(0)
+  unseenMessageCountOfUser2 Int          @default(0)
   user1             User          @relation("User1Conversations", fields: [user1Id], references: [id])
   user2             User          @relation("User2Conversations", fields: [user2Id], references: [id])
   messages          Message[]
 }
-
-
 
 enum MessageStatus {
   SENT
