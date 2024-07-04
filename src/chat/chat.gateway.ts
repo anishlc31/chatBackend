@@ -46,12 +46,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.sendUnseenMessageCounts(data.senderId);
     await this.sendUnseenMessageCounts(data.receiverId);
 
+    // Emit the initial status (e.g., 'SENT')
+   
 
-    // Emit the status update
-    await this.chatService.markMessageAsDelivered(message.id);
-
-  this.server.to(data.senderId).emit('statusUpdate', message.status);
-  this.server.to(data.receiverId).emit('statusUpdate', message.status);
+    this.server.to(data.senderId).emit('statusUpdate', { messageId: message.id, status: message.status });
+    this.server.to(data.receiverId).emit('statusUpdate', { messageId: message.id, status: message.status });
 
    
 
@@ -70,8 +69,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 
     // Emit the status update for both users
-  this.server.to(data.user1Id).emit('statusUpdate', 'SEEN');
-  this.server.to(data.user2Id).emit('statusUpdate', 'SEEN');
+    this.server.to(data.user1Id).emit('statusUpdate', { messageId: null, status: 'SEEN' });
+    this.server.to(data.user2Id).emit('statusUpdate', { messageId: null, status: 'SEEN' });
 
     return messages;
   }
@@ -119,4 +118,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const counts = await this.chatService.getUnseenMessageCounts(userId);
     this.server.to(userId).emit('unseenMessageCounts', counts);
   }
+
+
+  // async emitMessageStatusUpdate(messageId: string, status: string) {
+  //   this.server.emit('messageStatusUpdate', { messageId, status });
+  // }
 }
