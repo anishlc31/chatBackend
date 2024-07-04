@@ -27,7 +27,14 @@ export class ChatService {
           unseenMessageCountOfUser2: 0,
           createdAt: new Date(),
           updatedAt: new Date(),
+          updateChatAt: new Date(),
         },
+      });
+    } else {
+      // Update the updateChatAt field
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { updateChatAt: new Date() },
       });
     }
 
@@ -77,44 +84,47 @@ export class ChatService {
       take: take,
     });
   }
+
+
+  
 //making seen msg 
-  async markMessagesAsSeen(senderId: string, receiverId: string) {
-   const makeSeen =   prisma.message.updateMany({
-      where: {
-        senderId,
-        receiverId,
-        seen: false,
-      },
-      data: {
-        seen: true,
-        status: MessageStatus.SEEN,
-      },
-    });
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        OR: [
-          { user1Id: senderId, user2Id: receiverId },
-          { user1Id: receiverId, user2Id: senderId },
-        ],
-      },
-    });
+async markMessagesAsSeen(senderId: string, receiverId: string) {
+  const messages = await prisma.message.updateMany({
+    where: {
+      senderId,
+      receiverId,
+      seen: false,
+    },
+    data: {
+      seen: true,
+      status: MessageStatus.SEEN,
+    },
+  });
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      OR: [
+        { user1Id: senderId, user2Id: receiverId },
+        { user1Id: receiverId, user2Id: senderId },
+      ],
+    },
+  });
 
-    if (conversation) {
-      if (conversation.user1Id === senderId) {
-        await prisma.conversation.update({
-          where: { id: conversation.id },
-          data: { unseenMessageCountOfUser2: 0 },
-        });
-      } else if (conversation.user2Id === senderId) {
-        await prisma.conversation.update({
-          where: { id: conversation.id },
-          data: { unseenMessageCountOfUser1: 0 },
-        });
-      }
+  if (conversation) {
+    if (conversation.user1Id === senderId) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { unseenMessageCountOfUser2: 0 },
+      });
+    } else if (conversation.user2Id === senderId) {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { unseenMessageCountOfUser1: 0 },
+      });
     }
-
-return makeSeen;
   }
+
+  return messages;
+}
 
   
 //unseen msg count 
@@ -142,8 +152,27 @@ return makeSeen;
   }
 
 
-  //deliver msg 
 
+  //for sorted 
+
+  async getConversations(userId: string) {
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        OR: [
+          { user1Id: userId },
+          { user2Id: userId },
+        ],
+      },
+      orderBy: {
+        updateChatAt: 'desc', // Sort by updateChatAt in descending order
+      },
+    });
+
+    return conversations;
+  }
+
+
+  //for deliver msg (not worked for now )
   async markMessageAsDelivered(messageId: string) {
     await prisma.message.update({
       where: { id: messageId },
