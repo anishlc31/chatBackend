@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 export class ChatService {
   
   async sendMessage(senderId: string, receiverId: string, content: string) {
-
     let conversation = await prisma.conversation.findFirst({
       where: {
         OR: [
@@ -16,58 +15,50 @@ export class ChatService {
         ],
       },
     });
-
-    // If no conversation exists, create one
+  
     if (!conversation) {
       conversation = await prisma.conversation.create({
         data: {
           user1Id: senderId,
           user2Id: receiverId,
-          unseenMessageCountOfUser1: 0,
-          unseenMessageCountOfUser2: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
           updateChatAt: new Date(),
         },
       });
-    } else {
-      // Update the updateChatAt field
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { updateChatAt: new Date() },
-      });
     }
-
-
-    
-    const message =  prisma.message.create({
+  
+    const message = await prisma.message.create({
       data: {
         content,
         senderId,
         receiverId,
-        createdAt: new Date(),
-        seen: false,
-        status: MessageStatus.SENT, 
         conversationId: conversation.id,
-
       },
     });
-
-    if (conversation.user1Id === receiverId) {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { unseenMessageCountOfUser1: { increment: 1 } },
-      });
-    } else if (conversation.user2Id === receiverId) {
+  
+    // Update the updateChatAt field
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { updateChatAt: new Date() },
+    });
+  
+    // Update unseen message counts
+    if (conversation.user1Id === senderId) {
       await prisma.conversation.update({
         where: { id: conversation.id },
         data: { unseenMessageCountOfUser2: { increment: 1 } },
       });
+    } else {
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { unseenMessageCountOfUser1: { increment: 1 } },
+      });
     }
-
-
-    return message;
+  
+    return { message, conversation: await prisma.conversation.findUnique({ where: { id: conversation.id } }) };
   }
+
+  
+  
 
   async getMessagesBetweenUsers(user1Id: string, user2Id: string, skip: number, take: number) {
     return prisma.message.findMany({
@@ -123,7 +114,7 @@ async markMessagesAsSeen(senderId: string, receiverId: string) {
     }
   }
 
-  return messages;
+  return {messages,conversation};
 }
 
   
@@ -173,10 +164,23 @@ async markMessagesAsSeen(senderId: string, receiverId: string) {
 
 
   //for deliver msg (not worked for now )
+  
   async markMessageAsDelivered(messageId: string) {
     await prisma.message.update({
       where: { id: messageId },
       data: { status: MessageStatus.DELIVERED },
+    });
+  }
+
+//of update list 
+  async getConversation(user1Id: string, user2Id: string) {
+    return prisma.conversation.findFirst({
+      where: {
+        OR: [
+          { user1Id, user2Id },
+          { user1Id: user2Id, user2Id: user1Id },
+        ],
+      },
     });
   }
   
