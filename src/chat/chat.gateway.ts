@@ -41,20 +41,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { senderId: string; receiverId: string; content: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const message = await this.chatService.sendMessage(data.senderId, data.receiverId, data.content);
+    const { message, conversation } = await this.chatService.sendMessage(data.senderId, data.receiverId, data.content);
     this.server.to(data.receiverId).emit('receiveMessage', message);
     await this.sendUnseenMessageCounts(data.senderId);
     await this.sendUnseenMessageCounts(data.receiverId);
 
     // Emit the initial status (e.g., 'SENT')
-   
-
     this.server.to(data.senderId).emit('statusUpdate', { messageId: message.id, status: message.status });
     this.server.to(data.receiverId).emit('statusUpdate', { messageId: message.id, status: message.status });
 
-   
+    // Notify users about conversation update
+    this.server.to(data.senderId).emit('conversationUpdate', conversation);
+    this.server.to(data.receiverId).emit('conversationUpdate', conversation);
 
-    return message;
+    
+
+    // Send the updated sorted conversations to both users
+    await this.sendConversations(data.senderId);
+    await this.sendConversations(data.receiverId);
+
+
+   // return message;
   }
 
   @SubscribeMessage('getMessages')
@@ -71,6 +78,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Emit the status update for both users
     this.server.to(data.user1Id).emit('statusUpdate', { messageId: null, status: 'SEEN' });
     this.server.to(data.user2Id).emit('statusUpdate', { messageId: null, status: 'SEEN' });
+
+    
 
     return messages;
   }
@@ -119,8 +128,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(userId).emit('unseenMessageCounts', counts);
   }
 
+  private async sendConversations(userId: string) {
+    const conversations = await this.chatService.getConversations(userId);
+    this.server.to(userId).emit('initialConversations', conversations);
+  }
 
-  // async emitMessageStatusUpdate(messageId: string, status: string) {
-  //   this.server.emit('messageStatusUpdate', { messageId, status });
-  // }
+
 }
