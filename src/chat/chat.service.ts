@@ -187,4 +187,3 @@ async markMessagesAsSeen(senderId: string, receiverId: string) {
 }
 
 
-//it's not a work last bad day of this project, if another bad days occur i will quite this project 
