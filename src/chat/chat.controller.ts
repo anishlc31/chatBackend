@@ -1,18 +1,16 @@
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { Public } from 'src/auth/decorator/public.decorator';
+import { AuthService } from 'src/auth/auth.service';
 
 @Controller('chat')
 export class ChatController {
 
-    constructor(private chatService : ChatService){
+    constructor(private readonly chatService: ChatService, private authService : AuthService  ) {}
 
-    }
-
-    @Post('/conntection/:user1Id/:user2Id')
-    signup( @Query('user1Id') user1Id: string,
-         @Query('user2Id') user2Id: string) {
-        
-            return this.chatService.createConversation(user1Id,user2Id);
-    }
+    @Get(':userId')
+  async getConversations(@Param('userId') userId: string) {
+    return this.chatService.getConversations(userId);
+  }
+   
 }
