@@ -56,9 +56,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     
 
-    // Send the updated sorted conversations to both users
-    await this.sendConversations(data.senderId);
-    await this.sendConversations(data.receiverId);
+   
 
 
    // return message;
@@ -128,10 +126,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(userId).emit('unseenMessageCounts', counts);
   }
 
-  private async sendConversations(userId: string) {
-    const conversations = await this.chatService.getConversations(userId);
-    this.server.to(userId).emit('initialConversations', conversations);
-  }
+  // private async sendConversations(userId: string) {
+  //   const conversations = await this.chatService.getConversations(userId);
+  //   this.server.to(userId).emit('initialConversations', conversations);
+  // }
 
 
 }
