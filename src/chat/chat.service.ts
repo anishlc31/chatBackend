@@ -25,7 +25,8 @@ export class ChatService {
         },
       });
     }
-  
+    console.log(`Creating message at: ${new Date()}`);
+
     const message = await prisma.message.create({
       data: {
         content,
@@ -35,8 +36,8 @@ export class ChatService {
       },
     });
   
-    // Update the updateChatAt field
-    await prisma.conversation.update({
+    // Update the updateChatAt field after creating the message
+    conversation = await prisma.conversation.update({
       where: { id: conversation.id },
       data: { updateChatAt: new Date() },
     });
@@ -54,8 +55,9 @@ export class ChatService {
       });
     }
   
-    return { message, conversation: await prisma.conversation.findUnique({ where: { id: conversation.id } }) };
+    return { message, conversation };
   }
+  
 
   
   
@@ -147,20 +149,16 @@ async markMessagesAsSeen(senderId: string, receiverId: string) {
   //for sorted 
 
   async getConversations(userId: string) {
-    const conversations = await prisma.conversation.findMany({
+    return prisma.conversation.findMany({
       where: {
         OR: [
           { user1Id: userId },
           { user2Id: userId },
         ],
       },
-      orderBy: {
-        updateChatAt: 'desc', // Sort by updateChatAt in descending order
-      },
     });
-
-    return conversations;
   }
+  
 
 
   //for deliver msg (not worked for now )
