@@ -39,8 +39,11 @@ model Message {
   receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   seen      Boolean  @default(false)
   status    MessageStatus @default(SENT)
+  sendTime   DateTime    @default(now())
   conversationId String  @db.ObjectId
   conversation Conversation @relation(fields: [conversationId], references: [id])
+    @@index([senderId, receiverId, seen])
+
 }
 
 model Conversation {
@@ -53,7 +56,12 @@ model Conversation {
   unseenMessageCountOfUser2 Int          @default(0)
   user1             User          @relation("User1Conversations", fields: [user1Id], references: [id])
   user2             User          @relation("User2Conversations", fields: [user2Id], references: [id])
+  updateChatAt                 DateTime    @default(now())
+  lastSeenAt   DateTime    @default(now())
+  lastMsg String
   messages          Message[]
+   @@index([user1Id, user2Id])
+  @@index([updateChatAt])
 }
 
 enum MessageStatus {
