@@ -24,7 +24,7 @@ model User {
   isVerified        Boolean   @default(false)
   sentMessages      Message[] @relation("SentMessages")
   receivedMessages  Message[] @relation("ReceivedMessages")
-  isOnline          Boolean   @default(false) // Track online status
+  isOnline          Boolean   @default(false) 
    conversationsAsUser1 Conversation[] @relation("User1Conversations")
   conversationsAsUser2 Conversation[] @relation("User2Conversations")
 }
@@ -39,7 +39,7 @@ model Message {
   receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   seen      Boolean  @default(false)
   status    MessageStatus @default(SENT)
-  sendTime   DateTime    @default(now())
+  //sendTime   DateTime    @default(now())
   conversationId String  @db.ObjectId
   conversation Conversation @relation(fields: [conversationId], references: [id])
     @@index([senderId, receiverId, seen])
@@ -57,8 +57,8 @@ model Conversation {
   user1             User          @relation("User1Conversations", fields: [user1Id], references: [id])
   user2             User          @relation("User2Conversations", fields: [user2Id], references: [id])
   updateChatAt                 DateTime    @default(now())
-  lastSeenAt   DateTime    @default(now())
-  lastMsg String
+  lastMessage               String?
+  lastMessageTime           DateTime?
   messages          Message[]
    @@index([user1Id, user2Id])
   @@index([updateChatAt])
