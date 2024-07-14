@@ -22,11 +22,12 @@ export class ChatService {
           user1Id: senderId,
           user2Id: receiverId,
           updateChatAt: new Date(),
+          lastMessage: content,
+          lastMessageTime: new Date(),
         },
       });
     }
-    console.log(`Creating message at: ${new Date()}`);
-
+  
     const message = await prisma.message.create({
       data: {
         content,
@@ -36,24 +37,18 @@ export class ChatService {
       },
     });
   
-    // Update the updateChatAt field after creating the message
+    // Update the conversation with the last message and time
     conversation = await prisma.conversation.update({
       where: { id: conversation.id },
-      data: { updateChatAt: new Date() },
+      data: {
+        updateChatAt: new Date(),
+        lastMessage: content,
+        lastMessageTime: new Date(),
+        ...(conversation.user1Id === senderId
+          ? { unseenMessageCountOfUser2: { increment: 1 } }
+          : { unseenMessageCountOfUser1: { increment: 1 } }),
+      },
     });
-  
-    // Update unseen message counts
-    if (conversation.user1Id === senderId) {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { unseenMessageCountOfUser2: { increment: 1 } },
-      });
-    } else {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { unseenMessageCountOfUser1: { increment: 1 } },
-      });
-    }
   
     return { message, conversation };
   }
