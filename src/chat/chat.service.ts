@@ -52,10 +52,6 @@ export class ChatService {
   
     return { message, conversation };
   }
-  
-
-  
-  
 
   async getMessagesBetweenUsers(user1Id: string, user2Id: string, skip: number, take: number) {
     return prisma.message.findMany({
@@ -73,8 +69,6 @@ export class ChatService {
     });
   }
 
-
-  
 //making seen msg 
 async markMessagesAsSeen(senderId: string, receiverId: string) {
   const messages = await prisma.message.updateMany({
@@ -179,4 +173,5 @@ async markMessagesAsSeen(senderId: string, receiverId: string) {
   
 }
 
+//10 day rest
 
