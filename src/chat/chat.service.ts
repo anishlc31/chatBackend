@@ -173,6 +173,5 @@ async markMessagesAsSeen(senderId: string, receiverId: string) {
   
 }
 
-//10 day rest
-//for push
+//now 10 days off in 19 days let start 
 
