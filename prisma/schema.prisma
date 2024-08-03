@@ -19,7 +19,7 @@ model User {
   updatedAt         DateTime  @updatedAt
   password          String
   username          String
-  email             String
+  email    String   @unique
   verificationToken String?
   isVerified        Boolean   @default(false)
   sentMessages      Message[] @relation("SentMessages")
