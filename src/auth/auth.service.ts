@@ -6,126 +6,137 @@ import * as argon from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtPayload } from './types';
-import { Like } from 'typeorm';
-
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class AuthService {
+    constructor(
+        private jwtService: JwtService,
+        private configService: ConfigService
+    ) {}
 
-
-    constructor( private jwtService :JwtService, private configService : ConfigService){
-
-    }
-     async signup(dto : singupDto){
-
+    async signup(dto: singupDto) {
         const hash = await argon.hash(dto.password);
 
-        const user = await prisma.user
-          .create({
+        const user = await prisma.user.create({
             data: {
-                Username: dto.Username,
-              email: dto.email,
-              password : hash,
-              
+                username: dto.username,
+                email: dto.email,
+                password: hash,
             },
-          })
-          .catch((error) => {
+        }).catch((error) => {
             if (error instanceof PrismaClientKnownRequestError) {
-              if (error.code === 'P2002') {
-                throw new ForbiddenException('Credentials incorrect');
-              }
+                if (error.code === 'P2002') {
+                    throw new ForbiddenException('Credentials incorrect');
+                }
             }
             throw error;
-          });
+        });
 
-          const tokens = await this.getTokens(user.id, user.email);
+        const tokens = await this.getTokens(user.id, user.email);
 
-          return tokens;
-
-
+        return tokens;
     }
 
+    async login(dto: loginDto) {
+        const user = await prisma.user.findFirst({
+            where: {
+                email: dto.email,
+            },
+        });
 
+        if (!user) throw new ForbiddenException('Access Denied');
 
-  async login(dto: loginDto){
-    const user = await prisma.user.findFirst({
-      where: {
-        email: dto.email,
-      },
-    });
+        const passwordMatches = await argon.verify(user.password, dto.password);
+        if (!passwordMatches) throw new ForbiddenException('Access Denied');
 
-    if (!user) throw new ForbiddenException('Access Denied');
+        const tokens = await this.getTokens(user.id, user.email);
 
-    const passwordMatches = await argon.verify(user.password, dto.password);
-    if (!passwordMatches) throw new ForbiddenException('Access Denied');
-
-    const tokens = await this.getTokens(user.id, user.email);
-
-    return tokens;
-  }
-
+        return tokens;
+    }
 
     async getTokens(userId: string, email: string) {
-      const jwtPayload: JwtPayload = {
-          sub: userId,
-          email: email,
-      };
-  
-      const token = await this.jwtService.signAsync(jwtPayload, {
-          secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_LIFETIME'),
-      });
-  
-      return { access_token: token };
-  }
-  
+        const jwtPayload: JwtPayload = {
+            sub: userId,
+            email: email,
+        };
 
-      async logout(userId: string) {
-      
-        return true;
-      }
+        const token = await this.jwtService.signAsync(jwtPayload, {
+            secret: this.configService.get<string>('JWT_SECRET'),
+            expiresIn: this.configService.get<string>('JWT_LIFETIME'),
+        });
 
-
-   
-  async verifyJwt(token: string): Promise<JwtPayload> {
-    try {
-      return this.jwtService.verify<JwtPayload>(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-      });
-    } catch (error) {
-      console.error('JWT Verification Error:', error.message);
-      throw new UnauthorizedException('Invalid token');
+        return { access_token: token };
     }
-  }
+
+    async logout(userId: string) {
+        return true;
+    }
+
+    async verifyJwt(token: string): Promise<JwtPayload> {
+        try {
+            return this.jwtService.verify<JwtPayload>(token, {
+                secret: this.configService.get<string>('JWT_SECRET'),
+            });
+        } catch (error) {
+            console.error('JWT Verification Error:', error.message);
+            throw new UnauthorizedException('Invalid token');
+        }
+    }
+
+    async findAllByUsername(username: string) {
+        return prisma.user.findMany({
+            where: {
+                username: {
+                    contains: username.toLowerCase(),
+                    mode: 'insensitive', // This ensures case-insensitive search
+                },
+            },
+            select: {
+                username: true,
+                email: true,
+            },
+        });
+    }
+
+    // New method to get all users
+    async getAllUsers() {
+        return prisma.user.findMany({
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                createdAt: true,
+                updatedAt: true,
+                isVerified: true,
+            },
+        });
+    }
 
 
+    //google login 
 
-    async getOne(userId: string) {
-      const user = await prisma.user.findUnique({
-          where: {
-              id: userId,
+    async googleLogin(req) {
+        if (!req.user) {
+          throw new ForbiddenException('No user from Google');
+        }
+    
+        const user = await prisma.user.upsert({
+          where: { email: req.user.email },
+          update: {
+            username: req.user.email.split('@')[0],
+            email: req.user.email,
           },
-      });
-
-      if (!user) {
-          throw new ForbiddenException('User not found');
+          create: {
+            username: req.user.email.split('@')[0],
+            email: req.user.email,
+            password: '', // No password for OAuth users
+          },
+        });
+    
+        const tokens = await this.getTokens(user.id, user.email);
+        return tokens;
       }
-
-      return user;
-  }
-
-
-  async findAllByUsername(Username: string) {
-    return prisma.user.findMany({
-      where: {
-        Username: {
-          contains: Username.toLowerCase(),
-          mode: 'insensitive',
-        },
-      },
-    });
-  }
-
+    
 }
