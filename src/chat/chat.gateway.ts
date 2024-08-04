@@ -54,11 +54,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(data.senderId).emit('conversationUpdate', conversation);
     this.server.to(data.receiverId).emit('conversationUpdate', conversation);
 
-    
-
-   
-
-
    // return message;
   }
 
@@ -76,9 +71,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Emit the status update for both users
     this.server.to(data.user1Id).emit('statusUpdate', { messageId: null, status: 'SEEN' });
     this.server.to(data.user2Id).emit('statusUpdate', { messageId: null, status: 'SEEN' });
-
-    
-
     return messages;
   }
 
@@ -126,10 +118,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(userId).emit('unseenMessageCounts', counts);
   }
 
-  // private async sendConversations(userId: string) {
-  //   const conversations = await this.chatService.getConversations(userId);
-  //   this.server.to(userId).emit('initialConversations', conversations);
-  // }
 
 
+//being ready for next morning 
 }
