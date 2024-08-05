@@ -27,8 +27,22 @@ model User {
   isOnline          Boolean   @default(false) 
    conversationsAsUser1 Conversation[] @relation("User1Conversations")
   conversationsAsUser2 Conversation[] @relation("User2Conversations")
+    friendships1 Friendship[] @relation("Friendships1")
+  friendships2 Friendship[] @relation("Friendships2")
 }
 
+
+model Friendship {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  user1Id     String @db.ObjectId
+  user2Id     String @db.ObjectId
+  status      String   // "PENDING", "ACCEPTED", etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user1       User     @relation("Friendships1", fields: [user1Id], references: [id])
+  user2       User     @relation("Friendships2", fields: [user2Id], references: [id])
+}
 model Message {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   content   String
