@@ -6,4 +6,4 @@ export class ForFriendService {}
 
 //let's work in here 
 
-//fuck up 
+//fuck up day two
