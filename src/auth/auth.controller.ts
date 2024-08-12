@@ -9,19 +9,6 @@ export class AuthController {
     constructor(private authService: AuthService) {}
 
 
-    @Get('google')
-    @UseGuards(AuthGuard('google'))
-    async googleAuth(@Req() req) {
-      // initiates the Google OAuth2 login flow
-    }
-  
-    @Get('google/callback')
-    @UseGuards(AuthGuard('google'))
-    async googleAuthRedirect(@Req() req, @Res() res) {
-      const tokens = await this.authService.googleLogin(req);
-      return res.redirect(`http://your-frontend-url?token=${tokens.access_token}`);
-    }
-
     @Public()
     @Post('/signup')
     signup(@Body() dto: singupDto) {
