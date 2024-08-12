@@ -115,28 +115,6 @@ export class AuthService {
     }
 
 
-    //google login 
-
-    async googleLogin(req) {
-        if (!req.user) {
-          throw new ForbiddenException('No user from Google');
-        }
     
-        const user = await prisma.user.upsert({
-          where: { email: req.user.email },
-          update: {
-            username: req.user.email.split('@')[0],
-            email: req.user.email,
-          },
-          create: {
-            username: req.user.email.split('@')[0],
-            email: req.user.email,
-            password: '', // No password for OAuth users
-          },
-        });
-    
-        const tokens = await this.getTokens(user.id, user.email);
-        return tokens;
-      }
     
 }
