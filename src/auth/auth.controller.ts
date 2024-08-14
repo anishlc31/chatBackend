@@ -26,9 +26,9 @@ export class AuthController {
         return this.authService.findAllByUsername(username);
     }
 
-    // New endpoint to get all users
     @Get('/users')
     async getAllUsers() {
         return this.authService.getAllUsers();
     }
 }
+//fuck
