@@ -120,5 +120,5 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 
 
-//being ready for next morning 
 }
+//life damage vayo yarr
