@@ -12,5 +12,6 @@ export class ChatController {
   async getConversations(@Param('userId') userId: string) {
     return this.chatService.getConversations(userId);
   }
+  //k vayo maro project
    
 }
