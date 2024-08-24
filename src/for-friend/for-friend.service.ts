@@ -4,5 +4,5 @@ import { Injectable } from '@nestjs/common';
 export class ForFriendService {
   
 }
-//finally time come to start in better way 
+//i give up 
 
