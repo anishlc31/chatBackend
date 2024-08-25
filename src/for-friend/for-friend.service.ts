@@ -4,5 +4,5 @@ import { Injectable } from '@nestjs/common';
 export class ForFriendService {
   
 }
-//i give up 
+//i give up last day of git hub strik 
 
