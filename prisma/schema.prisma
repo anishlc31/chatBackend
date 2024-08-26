@@ -32,17 +32,7 @@ model User {
 }
 
 
-model Friendship {
-  id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  user1Id     String @db.ObjectId
-  user2Id     String @db.ObjectId
-  status      String   // "PENDING", "ACCEPTED", etc.
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  user1       User     @relation("Friendships1", fields: [user1Id], references: [id])
-  user2       User     @relation("Friendships2", fields: [user2Id], references: [id])
-}
 model Message {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   content   String
@@ -77,6 +67,26 @@ model Conversation {
    @@index([user1Id, user2Id])
   @@index([updateChatAt])
 }
+
+model Friendship {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  user1Id     String   @db.ObjectId
+  user2Id     String   @db.ObjectId
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user1       User     @relation("Friendships1", fields: [user1Id], references: [id])
+  user2       User     @relation("Friendships2", fields: [user2Id], references: [id])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
 
 enum MessageStatus {
   SENT
