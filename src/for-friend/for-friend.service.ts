@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, FriendshipStatus } from '@prisma/client';
 const prisma = new PrismaClient();
 
 @Injectable()
@@ -31,13 +31,21 @@ export class ForFriendService {
         });
     }
 
-    async respondToFriendRequest(friendshipId: string, status: string) {
-        // Update the status of the friendship request
-        return await prisma.friendship.update({
-            where: { id: friendshipId },
-            data: { status }
-        });
+async respondToFriendRequest(friendshipId: string, status: string) {
+    // Convert the status string to the FriendshipStatus enum
+    const friendshipStatus = FriendshipStatus[status.toUpperCase() as keyof typeof FriendshipStatus];
+
+    if (!friendshipStatus) {
+        throw new Error('Invalid status');
     }
+
+    // Update the status of the friendship request
+    return await prisma.friendship.update({
+        where: { id: friendshipId },
+        data: { status: friendshipStatus },
+    });
+}
+
 
     async getFriends(userId: string) {
         // Fetch all friends where status is ACCEPTED
