@@ -10,3 +10,4 @@
 # never work in 31 date 
 # man u match
 # day of change 
+# first of all i will work in add friend button same copy past the list 
