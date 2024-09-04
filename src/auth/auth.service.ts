@@ -6,6 +6,7 @@ import * as argon from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtPayload } from './types';
+import { FriendRequestDto, UpdateFriendshipStatusDto } from './dto/friend.dto';
 
 const prisma = new PrismaClient();
 
@@ -114,7 +115,48 @@ export class AuthService {
         });
     }
 
-//helo i am th
+
+
+    //for add friend 
+
+    async addFriend(dto: FriendRequestDto) {
+        const { senderId, receiverId } = dto;
+    
+        // Check if friendship already exists
+        const existingFriendship = await prisma.friendship.findFirst({
+          where: {
+            OR: [
+              { user1Id: senderId, user2Id: receiverId },
+              { user1Id: receiverId, user2Id: senderId },
+            ],
+          },
+        });
+    
+        if (existingFriendship) {
+          throw new ForbiddenException('Friend request already exists or you are already friends.');
+        }
+    
+        // Create a new friendship request
+        return prisma.friendship.create({
+          data: {
+            user1Id: senderId,
+            user2Id: receiverId,
+            status: 'PENDING', // Set initial status as PENDING
+          },
+        });
+      }
+
+
+
+      async updateFriendshipStatus(dto: UpdateFriendshipStatusDto) {
+        const { friendshipId, status } = dto;
+    
+        // Update the friendship status
+        return prisma.friendship.update({
+          where: { id: friendshipId },
+          data: { status },
+        });
+      }
     
     
 }
