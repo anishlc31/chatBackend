@@ -44,7 +44,4 @@ export class AuthController {
     @Patch('/update-friendship-status')
     async updateFriendshipStatus(@Body() updateFriendshipStatusDto: UpdateFriendshipStatusDto) {
       return this.authService.updateFriendshipStatus(updateFriendshipStatusDto);
-    }
-}
-
-//back to fack streak 
+// last try 
