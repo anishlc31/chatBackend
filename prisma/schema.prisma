@@ -14,22 +14,24 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  password          String
-  username          String
-  email    String   @unique
-  verificationToken String?
-  isVerified        Boolean   @default(false)
-  sentMessages      Message[] @relation("SentMessages")
-  receivedMessages  Message[] @relation("ReceivedMessages")
-  isOnline          Boolean   @default(false) 
-   conversationsAsUser1 Conversation[] @relation("User1Conversations")
-  conversationsAsUser2 Conversation[] @relation("User2Conversations")
-    friendships1 Friendship[] @relation("Friendships1")
-  friendships2 Friendship[] @relation("Friendships2")
+  id                        String         @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  password                  String
+  username                  String
+  email                     String         @unique
+  verificationToken         String?
+  isVerified                Boolean        @default(false)
+  sentMessages              Message[]      @relation("SentMessages")
+  receivedMessages          Message[]      @relation("ReceivedMessages")
+  isOnline                  Boolean        @default(false)
+  conversationsAsUser1      Conversation[] @relation("User1Conversations")
+  conversationsAsUser2      Conversation[] @relation("User2Conversations")
+  requestedFriendships      Friendship[]   @relation("RequestedFriendships")
+  receivedFriendships       Friendship[]   @relation("ReceivedFriendships")
+  friendRequestNotifacation         Int            @default(0) // New field for notifications
 }
+
 
 
 
@@ -69,16 +71,21 @@ model Conversation {
 }
 
 model Friendship {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  user1Id     String   @db.ObjectId
-  user2Id     String   @db.ObjectId
-  status      FriendshipStatus @default(PENDING)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String             @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  requesterId String            @db.ObjectId
+  recipientId String            @db.ObjectId
+  status     FriendshipStatus   @default(PENDING)
 
-  user1       User     @relation("Friendships1", fields: [user1Id], references: [id])
-  user2       User     @relation("Friendships2", fields: [user2Id], references: [id])
+  requester  User               @relation("RequestedFriendships", fields: [requesterId], references: [id])
+  recipient  User               @relation("ReceivedFriendships", fields: [recipientId], references: [id])
+
+  @@unique([requesterId, recipientId]) 
 }
+
+
+
 
 enum FriendshipStatus {
   PENDING
