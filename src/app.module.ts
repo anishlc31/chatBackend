@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtAuthGuard } from './auth/guards/jwt.guards';
 import { APP_GUARD } from '@nestjs/core';
 import { ChatModule } from './chat/chat.module';
+import { FriendshipModule } from './friendship/friendship.module';
 
 
 
@@ -13,7 +14,9 @@ import { ChatModule } from './chat/chat.module';
 
   AuthModule,
 
-  ChatModule],
+  ChatModule,
+
+  FriendshipModule,],
   providers: [
     {
       provide: APP_GUARD,
@@ -25,5 +28,5 @@ export class AppModule {
 
 }
 
-
+// let start and finish with first month of 2082
 
